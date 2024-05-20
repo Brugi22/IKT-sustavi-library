@@ -1,0 +1,15 @@
+spring.application.name: library-service
+
+spring:
+  jpa:
+    show-sql: true
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: update # create-drop is useful for testing, because we want to have a clean initialization every time
+
+  datasource:
+    url: jdbc:h2:mem:library-service;INIT=CREATE SCHEMA IF NOT EXISTS library_service
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
