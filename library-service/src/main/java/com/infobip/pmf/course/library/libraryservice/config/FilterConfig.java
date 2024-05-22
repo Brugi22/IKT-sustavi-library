@@ -12,7 +12,7 @@ public class FilterConfig {
     public FilterRegistrationBean<ApiKeyAuthFilter> apiKeyAuthFilter() {
         FilterRegistrationBean<ApiKeyAuthFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new ApiKeyAuthFilter());
-        registrationBean.addUrlPatterns("/libraries/*", "/libraries/*/versions/*"); // Add all URL patterns you want to protect
+        registrationBean.addUrlPatterns("/libraries/*", "/libraries/*/versions/*");
         return registrationBean;
     }
 }

@@ -2,6 +2,8 @@ package com.infobip.pmf.course.library.libraryservice.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.infobip.pmf.course.library.libraryservice.*;
+import com.infobip.pmf.course.library.libraryservice.DTO.CustomPageResponse;
+import com.infobip.pmf.course.library.libraryservice.DTO.LibraryDTO;
 import com.infobip.pmf.course.library.libraryservice.storage.LibraryEntity;
 import com.infobip.pmf.course.library.libraryservice.storage.VersionEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
@@ -41,15 +44,16 @@ public class LibraryControllerTest {
 
     @BeforeEach
     void setUp() {
-        when(libraryService.getAllLibraries(any(), any(), any())).thenReturn(
-                new PageImpl<>(Collections.emptyList())
-        );
+        Page<LibraryDTO> paginatedLibrary = new PageImpl<>(Collections.emptyList());
+        Page<Version> paginatedVersion = new PageImpl<>(Collections.emptyList());
+        CustomPageResponse<LibraryDTO> emptyResponseLibrary = new CustomPageResponse<>(paginatedLibrary);
+        CustomPageResponse<Version> emptyResponseVersions = new CustomPageResponse<>(paginatedVersion);
+
+        when(libraryService.getAllLibraries(any(), any(), any())).thenReturn(emptyResponseLibrary);
         when(libraryService.createLibrary(any())).thenReturn(LibraryEntity.from(new Library(1L, "test", "test", "test", "test", Collections.emptyList())));
-        when(libraryService.getLibraryById(1L)).thenReturn(new Library(1L, "test", "test", "test", "test", Collections.emptyList()));
+        when(libraryService.getLibraryById(1L)).thenReturn(new LibraryEntity(1L, "test", "test", "test", "test", Collections.emptyList()));
         when(libraryService.updateLibrary(any(), any(), any())).thenReturn(LibraryEntity.from(new Library(1L, "test", "test", "test", "test", Collections.emptyList())));
-        when(libraryService.getAllVersionsOfLibrary(1L, PageRequest.of(0, 20))).thenReturn(
-                new PageImpl<>(Collections.emptyList())
-        );
+        when(libraryService.getAllVersionsOfLibrary(1L, PageRequest.of(0, 20))).thenReturn(emptyResponseVersions);
         when(libraryService.createVersionForLibrary(any(), any())).thenReturn(VersionEntity.from(new Version(1L, "test", "1.0.0", false, null)));
         when(libraryService.getVersionById(1L, 1L)).thenReturn(VersionEntity.from(new Version(1L, "test", "1.0.0", false, null)));
         when(libraryService.updateVersionOfLibrary(any(), any(), any(), anyBoolean())).thenReturn(VersionEntity.from(new Version(1L, "test", "1.0.0", false, null)));
@@ -65,11 +69,11 @@ public class LibraryControllerTest {
     @Test
     @WithMockUser(authorities = "API_KEY_APP la9psd71atbpgeg7fvvx")
     void testCreateLibrary() throws Exception {
-        Library library = new Library(null, "test", "test", "test", "test", null);
+        LibraryDTO libraryDTO = new LibraryDTO(null, "test", "test", "test", "test", null);
         mockMvc.perform(post("/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(library)))
-                .andExpect(status().isCreated());
+               .contentType(MediaType.APPLICATION_JSON)
+               .content(objectMapper.writeValueAsString(libraryDTO)))
+               .andExpect(status().isCreated());
     }
 
     @Test
@@ -84,8 +88,8 @@ public class LibraryControllerTest {
     void testUpdateLibrary() throws Exception {
         UpdateLibraryRequest request = new UpdateLibraryRequest("test", "test");
         mockMvc.perform(patch("/libraries/{id}", 1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
     }
 
@@ -115,8 +119,8 @@ public class LibraryControllerTest {
     void testCreateVersionForLibrary() throws Exception {
         Version version = new Version(null, "test", "1.0.0", false, null);
         mockMvc.perform(post("/libraries/{id}/versions", 1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(version)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(version)))
                 .andExpect(status().isCreated());
     }
 
@@ -125,8 +129,8 @@ public class LibraryControllerTest {
     void testUpdateVersionOfLibrary() throws Exception {
         UpdateVersionRequest request = new UpdateVersionRequest(false, "test");
         mockMvc.perform(patch("/libraries/{id}/versions/{versionId}", 1, 1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
     }
 }

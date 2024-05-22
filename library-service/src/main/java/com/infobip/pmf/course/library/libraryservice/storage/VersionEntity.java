@@ -45,7 +45,7 @@ public class VersionEntity {
     }
 
     public Version asVersion() {
-        return new Version(id, semanticVersion, description, deprecated, releaseDate);
+        return new Version(id, description, semanticVersion, deprecated, releaseDate);
     }
 
     public Long getId() {

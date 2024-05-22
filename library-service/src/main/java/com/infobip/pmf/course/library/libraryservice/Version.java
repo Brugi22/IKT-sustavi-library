@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 public record Version (
-
         Long id,
         String description,
         @NotNull @ValidSemanticVersion String semanticVersion,

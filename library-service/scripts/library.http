@@ -1,4 +1,4 @@
-GET http://localhost:8080/libraries?grupa=spring
+GET http://localhost:8080/libraries?page=-1&size=10
 Content-Type: application/json
 Authorization: App la9psd71atbpgeg7fvvx
 
@@ -9,15 +9,15 @@ Content-Type: application/json
 Authorization: App la9psd71atbpgeg7fvvx
 
 {
-  "groupId": "org.springframework",
-  "artifactId": "spring-core",
+  "groupId": "org.springframework.2",
+  "artifactId": "spring-core.2",
   "name": "Spring Core",
   "description": "Spring Core Framework"
 }
 
 ###
 
-GET http://localhost:8080/libraries/1
+GET http://localhost:8080/libraries/4
 Content-Type: application/json
 Authorization: App la9psd71atbpgeg7fvvx
 

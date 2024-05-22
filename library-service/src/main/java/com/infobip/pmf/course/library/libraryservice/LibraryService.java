@@ -1,5 +1,7 @@
 package com.infobip.pmf.course.library.libraryservice;
 
+import com.infobip.pmf.course.library.libraryservice.DTO.CustomPageResponse;
+import com.infobip.pmf.course.library.libraryservice.DTO.LibraryDTO;
 import com.infobip.pmf.course.library.libraryservice.exception.*;
 import com.infobip.pmf.course.library.libraryservice.storage.LibraryEntity;
 import com.infobip.pmf.course.library.libraryservice.storage.LibraryEntityRepository;
@@ -22,46 +24,52 @@ public class LibraryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Library> getAllLibraries(String groupId, String artifactId, Pageable pageable) {
-        Page<LibraryEntity> libraryEntity;
+    public CustomPageResponse<LibraryDTO> getAllLibraries(String groupId, String artifactId, Pageable pageable) {
+        Page<LibraryEntity> libraryEntityPaginated;
 
         if (groupId != null && artifactId != null) {
-            libraryEntity = libraryEntityRepository.findByGroupIdAndArtifactId(groupId, artifactId, pageable);
+            libraryEntityPaginated = libraryEntityRepository.findByGroupIdAndArtifactId(groupId, artifactId, pageable);
         } else if (groupId != null) {
-            libraryEntity = libraryEntityRepository.findByGroupId(groupId, pageable);
+            libraryEntityPaginated = libraryEntityRepository.findByGroupId(groupId, pageable);
         } else if (artifactId != null) {
-            libraryEntity = libraryEntityRepository.findByArtifactId(artifactId, pageable);
+            libraryEntityPaginated = libraryEntityRepository.findByArtifactId(artifactId, pageable);
         } else {
-            libraryEntity = libraryEntityRepository.findAll(pageable);
+            libraryEntityPaginated = libraryEntityRepository.findAll(pageable);
         }
 
-        return libraryEntity.map(LibraryEntity::asLibrary);
+        Page<LibraryDTO> libraryPaginated = libraryEntityPaginated.map(LibraryDTO::toDTO);
+
+        return new CustomPageResponse<>(libraryPaginated);
     }
 
     @Transactional
     public LibraryEntity createLibrary(LibraryEntity library) {
         if (libraryEntityRepository.existsByGroupIdAndArtifactId(library.getGroupId(), library.getArtifactId())) {
-            throw new LibraryAlreadyExistsException();
+            throw new LibraryAlreadyExistsException("Library with groupId %s and artifactId %s already exists".formatted(library.getGroupId(), library.getArtifactId()),
+                                                    "Use POST to create new library");
         }
         return libraryEntityRepository.save(library);
     }
 
     @Transactional(readOnly = true)
-    public Library getLibraryById(Long id) {
-        return libraryEntityRepository.findById(id).map(LibraryEntity::asLibrary)
-                .orElseThrow(LibraryNotFoundException::new);
+    public LibraryEntity getLibraryById(Long id) {
+        return libraryEntityRepository.findById(id)
+                .orElseThrow(() -> new LibraryNotFoundException("Library with id '%d' doesn't exist".formatted(id),
+                                                                "Use GET to retrieve existing library"));
     }
 
     @Transactional(readOnly = true)
     public LibraryEntity getLibraryEntityById(Long id) {
         return libraryEntityRepository.findById(id)
-                .orElseThrow(LibraryNotFoundException::new);
+                .orElseThrow(() -> new LibraryNotFoundException("Library with id '%d' doesn't exist".formatted(id),
+                                                                "Use GET to retrieve existing library"));
     }
 
     @Transactional
     public LibraryEntity updateLibrary(Long id, String name, String description) {
         LibraryEntity library = getLibraryEntityById(id);
-        if(library == null) throw new LibraryNotFoundException();
+        if(library == null) throw new LibraryNotFoundException("Library with id '%d' doesn't exist".formatted(id),
+                                                               "Use PATCH to update existing library");
         library.setName(name);
         library.setDescription(description);
         return libraryEntityRepository.save(library);
@@ -72,16 +80,18 @@ public class LibraryService {
         LibraryEntity library = getLibraryEntityById(id);
 
         if(library != null) libraryEntityRepository.delete(library);
-        else throw new LibraryNotFoundException();
+        else throw new LibraryNotFoundException("Library with id '%d' doesn't exist".formatted(id),
+                                                "Use DELETE to delete existing library");
     }
 
     @Transactional(readOnly = true)
-    public Page<Version> getAllVersionsOfLibrary(Long id, Pageable pageable) {
+    public CustomPageResponse<Version> getAllVersionsOfLibrary(Long id, Pageable pageable) {
         LibraryEntity library = getLibraryEntityById(id);
         if(library != null) {
-            Page<VersionEntity> versionEntity = versionEntityRepository.findByLibrary(library, pageable);
-            return versionEntity.map(VersionEntity::asVersion);
-        } else throw new LibraryNotFoundException();
+            Page<Version> versionPaginated = versionEntityRepository.findByLibrary(library, pageable).map(VersionEntity::asVersion);
+            return new CustomPageResponse<>(versionPaginated);
+        } else throw new LibraryNotFoundException("Library with id '%d' doesn't exist".formatted(id),
+                                                  "Use GET to retrieve versions of existing library");
     }
 
     @Transactional
@@ -89,27 +99,35 @@ public class LibraryService {
         LibraryEntity library = getLibraryEntityById(id);
         if(library != null) {
             version.setLibrary(library);
-            if (versionEntityRepository.existsBySemanticVersion(version.getSemanticVersion())) {
-                throw new VersionAlreadyExistsException();
+            if (versionEntityRepository.existsBySemanticVersionAndLibraryId(version.getSemanticVersion(), id)) {
+                throw new VersionAlreadyExistsException("Version with semantic version '%s' already exists".formatted(version.getSemanticVersion()),
+                                                        "Use POST to create new version for a library");
             }
             return versionEntityRepository.save(version);
-        } else throw new LibraryNotFoundException();
+        } else throw new LibraryNotFoundException("Library with id '%d' doesn't exist".formatted(id),
+                                                  "Use POST to create version of existing library");
     }
 
     @Transactional
     public VersionEntity updateVersionOfLibrary(Long id, Long versionId, String description, Boolean deprecated) {
-        VersionEntity version = versionEntityRepository.findById(versionId).orElseThrow(VersionNotFoundException::new);
-        if(version.isDeprecated()) throw new VersionDeprecatedException();
+        libraryEntityRepository.findById(id).orElseThrow(() -> new LibraryNotFoundException("Library with id '%d' doesn't exist".formatted(id),
+                                                                                            "Use PATCH to update version of existing library"));
+        VersionEntity version = versionEntityRepository.findById(versionId).orElseThrow(() -> new VersionNotFoundException("Version with id '%d' doesn't exist".formatted(id),
+                                                                                                                           "Use PATCH to update existing version"));
+        if(version.isDeprecated()) throw new VersionDeprecatedException("Version is deprecated",
+                                                                        "Use PATCH to update non deprecated versions");
         version.setDescription(description);
         version.setDeprecated(deprecated);
         return versionEntityRepository.save(version);
     }
 
     @Transactional(readOnly = true)
-    public VersionEntity getVersionById(Long libraryId, Long id) {
-        libraryEntityRepository.findById(libraryId).orElseThrow(LibraryNotFoundException::new);
+    public VersionEntity getVersionById(Long id, Long versionId) {
+        libraryEntityRepository.findById(id).orElseThrow(() -> new LibraryNotFoundException("Library with id '%d' doesn't exist".formatted(id),
+                                                                                            "Use GET to retrieve version of existing library"));
 
-        return versionEntityRepository.findById(id)
-                .orElseThrow(VersionNotFoundException::new);
+        return versionEntityRepository.findById(versionId)
+                .orElseThrow(() -> new VersionNotFoundException("Version with id '%d' doesn't exist".formatted(versionId),
+                                                                "Use GET to retrieve version of existing library"));
     }
 }

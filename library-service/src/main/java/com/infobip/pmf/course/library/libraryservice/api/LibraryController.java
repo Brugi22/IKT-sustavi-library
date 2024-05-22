@@ -1,10 +1,11 @@
 package com.infobip.pmf.course.library.libraryservice.api;
 
+import com.infobip.pmf.course.library.libraryservice.DTO.CustomPageResponse;
+import com.infobip.pmf.course.library.libraryservice.DTO.LibraryDTO;
 import com.infobip.pmf.course.library.libraryservice.*;
 import com.infobip.pmf.course.library.libraryservice.storage.LibraryEntity;
-import com.infobip.pmf.course.library.libraryservice.storage.VersionEntity;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
+import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -22,30 +23,31 @@ public class LibraryController {
     }
 
     @GetMapping
-    public Page<Library> getAllLibraries(
+    public CustomPageResponse<LibraryDTO> getAllLibraries(
             @RequestParam(required = false) String groupId,
             @RequestParam(required = false) String artifactId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int size) {
+
         return libraryService.getAllLibraries(groupId, artifactId, PageRequest.of(page, size));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Library createLibrary(@RequestBody @Valid Library library) {
-        return libraryService.createLibrary(Library.toEntity(library)).asLibrary();
+    public LibraryDTO createLibrary(@RequestBody @Valid Library library) {
+        return LibraryDTO.toDTO(libraryService.createLibrary(LibraryEntity.from(library)));
     }
 
     @GetMapping("/{id}")
-    public Library getLibraryById(@PathVariable Long id) {
-        return libraryService.getLibraryById(id);
+    public LibraryDTO getLibraryById(@PathVariable Long id) {
+        return LibraryDTO.toDTO(libraryService.getLibraryById(id));
     }
 
     @PatchMapping("/{id}")
-    public Library updateLibrary(
+    public LibraryDTO updateLibrary(
             @PathVariable Long id,
             @RequestBody @Valid UpdateLibraryRequest request) {
-        return libraryService.updateLibrary(id, request.name(), request.description()).asLibrary();
+        return LibraryDTO.toDTO(libraryService.updateLibrary(id, request.name(), request.description()));
     }
 
     @DeleteMapping("/{id}")
@@ -55,7 +57,7 @@ public class LibraryController {
     }
 
     @GetMapping("/{id}/versions")
-    public Page<Version> getAllVersionsOfLibrary(
+    public CustomPageResponse<Version> getAllVersionsOfLibrary(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {

@@ -33,6 +33,18 @@ public class LibraryEntity {
     @OneToMany(mappedBy = "library", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VersionEntity> versions;
 
+    public LibraryEntity() {
+    }
+
+    public LibraryEntity(Long id, String groupId, String artifactId, String name, String description, List<VersionEntity> versions) {
+        this.id = id;
+        this.groupId = groupId;
+        this.artifactId = artifactId;
+        this.name = name;
+        this.description = description;
+        this.versions = versions;
+    }
+
     public static LibraryEntity from(Library library) {
         var libraryEntity = new LibraryEntity();
         libraryEntity.setId(library.id());
@@ -40,7 +52,11 @@ public class LibraryEntity {
         libraryEntity.setArtifactId(library.artifactId());
         libraryEntity.setName(library.name());
         libraryEntity.setDescription(library.description());
-        libraryEntity.setVersions(library.versions().stream().map(Version::toEntity).toList());
+        libraryEntity.setVersions(
+                Optional.ofNullable(library.versions())
+                        .map(versions -> versions.stream().map(Version::toEntity).toList())
+                        .orElse(Collections.emptyList())
+        );
         return libraryEntity;
     }
 
