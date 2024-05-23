@@ -2,10 +2,11 @@ services:
   db:
     image: mariadb
     restart: always
-    environment:
-      MARIADB_ROOT_PASSWORD: password
     volumes:
       - ./mariadb:/docker-entrypoint-initdb.d
+    environment:
+      MARIADB_DATABASE: library-service
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
     ports:
       - "3306:3306"
     healthcheck:
@@ -20,3 +21,21 @@ services:
           "--innodb_initialized"
         ]
       timeout: 30s
+
+  #library-app:
+  #  build: ./library-service
+  #  restart: unless-stopped
+  #  depends_on:
+  #    db:
+  #      condition: service_healthy
+  #  ports:
+  #    - "8080:8080"
+  #  environment:
+  #    MARIADB_LIBRARY_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+  #  healthcheck:
+  #    interval: 10s
+  #    retries: 10
+  #    timeout: 30s
+  #    test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+
+  # nisam mogao popraviti grešku kada se nije mogao spojiti na container
