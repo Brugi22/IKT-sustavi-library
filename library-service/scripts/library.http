@@ -1,0 +1,74 @@
+GET http://localhost:8080/libraries
+Content-Type: application/json
+Authorization: App la9psd71atbpgeg7fvvx
+
+###
+
+POST http://localhost:8080/libraries
+Content-Type: application/json
+Authorization: App la9psd71atbpgeg7fvvx
+
+{
+  "groupId": "org.springframework.2",
+  "artifactId": "spring-core.2",
+  "name": "Spring Core",
+  "description": "Spring Core Framework"
+}
+
+###
+
+GET http://localhost:8080/libraries/4
+Content-Type: application/json
+Authorization: App la9psd71atbpgeg7fvvx
+
+###
+
+PATCH http://localhost:8080/libraries/1
+Content-Type: application/json
+Authorization: App la9psd71atbpgeg7fvvx
+
+{
+  "name": "Spring Core Framework1",
+  "description": "Spring Core Framework1"
+}
+
+###
+
+DELETE http://localhost:8080/libraries/3
+Content-Type: application/json
+Authorization: App la9psd71atbpgeg7fvvx
+
+###
+
+POST http://localhost:8080/libraries/4/versions
+Content-Type: application/json
+Authorization: App la9psd71atbpgeg7fvvx
+
+{
+  "semanticVersion": "5.3.10",
+  "description": "Spring Core Framework 5.3.10",
+  "deprecated": false
+}
+
+###
+
+GET http://localhost:8080/libraries/4/versions
+Content-Type: application/json
+Authorization: App la9psd71atbpgeg7fvvx
+
+###
+
+PATCH http://localhost:8080/libraries/4/versions/1
+Content-Type: application/json
+Authorization: App la9psd71atbpgeg7fvvx
+
+{
+  "description": "Spring Core Framework 5.3.9",
+  "deprecated": true
+}
+
+###
+
+GET http://localhost:8080/libraries/4/versions/1
+Content-Type: application/json
+Authorization: App la9psd71atbpgeg7fvvx

@@ -1,0 +1,27 @@
+spring.application.name: library-service
+
+spring:
+  jpa:
+    show-sql: true # Show SQL queries in the console, useful for debugging, but not recommended for production
+    hibernate:
+      # Set this to none if you have your own schema.sql initialization file
+      # and you want to use it instead of Hibernate's schema generation.
+      #
+      # The initialization file may look like this:
+      # CREATE TABLE IF NOT EXISTS coffee_ordering.coffee (
+      #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      #   coffee_name VARCHAR(255) NOT NULL,
+      #   coffee_type ENUM('ESPRESSO','MACCHIATO','LUNGO') NOT NULL,
+      #   available BOOLEAN NOT NULL
+      #);
+      ddl-auto: update
+
+  datasource:
+    url: jdbc:mariadb://localhost:3306/library-service # ovdje sam stavio jdbc:mariadb://db:3306/library-service ali svejedno je odbijao konekciju na conatineru
+    username: root # never use root user like in this example, configure your own user in init script with limited permissions
+    password: ${MARIADB_LIBRARY_ROOT_PASSWORD} # never hardcode passwords, use env variables
+    driver-class-name: org.mariadb.jdbc.Driver
+
+springdoc:
+  api-docs:
+    path: /openapi
