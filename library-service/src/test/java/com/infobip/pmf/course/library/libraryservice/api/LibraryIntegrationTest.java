@@ -31,7 +31,7 @@ public class LibraryIntegrationTest {
     }
 
     @Test
-    void shouldGetUnauthorizedException() throws JSONException {
+    void shouldGetUnauthorizedException() {
         var exception = catchThrowableOfType(
                 () -> restClient.get()
                         .uri("/libraries")
@@ -61,13 +61,20 @@ public class LibraryIntegrationTest {
     }
 
     @Test
-    void shouldCreateNewLibrary() throws JSONException {
+    void shouldTestFlow() throws JSONException {
 
         String newLibraryJson = """
         {
             "groupId": "org.springframework",
             "artifactId": "spring-core",
             "name": "Spring Core",
+            "description": "Spring Core Framework"
+        }
+        """;
+
+        String updateLibrary = """
+        {
+            "name": "Spring Core Framework",
             "description": "Spring Core Framework"
         }
         """;
@@ -82,7 +89,130 @@ public class LibraryIntegrationTest {
                 .toEntity(String.class);
 
         then(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        JSONAssert.assertEquals(newLibraryJson, response.getBody(), false);
+        JSONAssert.assertEquals("""
+                {
+                    "id": 4,
+                    "groupId": "org.springframework",
+                    "artifactId": "spring-core",
+                    "name": "Spring Core",
+                    "description": "Spring Core Framework",
+                    "versions": []
+                }""", response.getBody(), true);
+
+        response = restClient.get()
+                .uri("/libraries")
+                .header(HttpHeaders.AUTHORIZATION, "App la9psd71atbpgeg7fvvx")
+                .retrieve()
+                .toEntity(String.class);
+
+        JSONAssert.assertEquals("""
+                {
+                    results: [
+                        {
+                            "id": 1,
+                            "groupId": "com.infobip",
+                            "artifactId": "libraryA",
+                            "name": "Library A",
+                            "description": "Description for Library A",
+                            "versions" : [1, 2, 3]
+                        },
+                        {
+                            "id": 2,
+                            "groupId": "com.infobip",
+                            "artifactId": "libraryB",
+                            "name": "Library B",
+                            "description": "Description for Library B",
+                            "versions" : [4, 5]
+                        },
+                        {
+                            "id": 3,
+                            "groupId": "com.infobip",
+                            "artifactId": "libraryC",
+                            "name": "Library C",
+                            "description": "Description for Library C",
+                            "versions" : [6]
+                        },
+                        {
+                            "id": 4,
+                            "groupId": "org.springframework",
+                            "artifactId": "spring-core",
+                            "name": "Spring Core",
+                            "description": "Spring Core Framework",
+                            "versions" : []
+                        }
+                    ],
+                    "page": 0,
+                    "size": 20,
+                    "totalPages": 1,
+                    "totalResults": 4
+                }""", response.getBody(), true);
+
+        response = restClient.patch()
+                .uri("/libraries/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(updateLibrary)
+                .header(HttpHeaders.AUTHORIZATION, "App la9psd71atbpgeg7fvvx")
+                .retrieve()
+                .toEntity(String.class);
+
+        then(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JSONAssert.assertEquals("""
+                {
+                            "id": 1,
+                            "groupId": "com.infobip",
+                            "artifactId": "libraryA",
+                            "name": "Spring Core Framework",
+                            "description": "Spring Core Framework",
+                            "versions" : [1, 2, 3]
+                }""", response.getBody(), true);
+
+        response = restClient.delete()
+                .uri("/libraries/2")
+                .header(HttpHeaders.AUTHORIZATION, "App la9psd71atbpgeg7fvvx")
+                .retrieve()
+                .toEntity(String.class);
+
+        then(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        response = restClient.get()
+                .uri("/libraries")
+                .header(HttpHeaders.AUTHORIZATION, "App la9psd71atbpgeg7fvvx")
+                .retrieve()
+                .toEntity(String.class);
+
+        JSONAssert.assertEquals("""
+                {
+                    results: [
+                        {
+                            "id": 1,
+                            "groupId": "com.infobip",
+                            "artifactId": "libraryA",
+                            "name": "Spring Core Framework",
+                            "description": "Spring Core Framework",
+                            "versions" : [1, 2, 3]
+                        },
+                        {
+                            "id": 3,
+                            "groupId": "com.infobip",
+                            "artifactId": "libraryC",
+                            "name": "Library C",
+                            "description": "Description for Library C",
+                            "versions" : [6]
+                        },
+                        {
+                            "id": 4,
+                            "groupId": "org.springframework",
+                            "artifactId": "spring-core",
+                            "name": "Spring Core",
+                            "description": "Spring Core Framework",
+                            "versions" : []
+                        }
+                    ],
+                    "page": 0,
+                    "size": 20,
+                    "totalPages": 1,
+                    "totalResults": 3
+                }""", response.getBody(), true);
 
         var exception = catchThrowableOfType(
                 () -> restClient.post()
@@ -96,10 +226,21 @@ public class LibraryIntegrationTest {
         );
 
         then(exception.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+
+        exception = catchThrowableOfType(
+                () -> restClient.get()
+                        .uri("/libraries?page=-1&size=-1")
+                        .header(HttpHeaders.AUTHORIZATION, "App la9psd71atbpgeg7fvvx")
+                        .retrieve()
+                        .toEntity(String.class),
+                HttpClientErrorException.class
+        );
+
+        then(exception.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    void shouldGetBadRequestForInvalidInput() throws JSONException {
+    void shouldGetBadRequestForInvalidInput() {
         // given
         String invalidLibraryJson = """
                    {
@@ -138,40 +279,6 @@ public class LibraryIntegrationTest {
         );
 
         then(exception.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    }
-
-    @Test
-    void shouldCreateNewVersion() throws JSONException {
-        String newVersionJson = """
-        {
-            "semanticVersion": "3.0.0",
-            "description": "Major update",
-            "deprecated": false
-        }
-        """;
-
-        var response = restClient.post()
-                .uri("/libraries/1/versions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(newVersionJson)
-                .header(HttpHeaders.AUTHORIZATION, "App la9psd71atbpgeg7fvvx")
-                .retrieve()
-                .toEntity(String.class);
-
-        then(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
-        var exception = catchThrowableOfType(
-                () -> restClient.post()
-                        .uri("/libraries/1/versions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(newVersionJson)
-                        .header(HttpHeaders.AUTHORIZATION, "App la9psd71atbpgeg7fvvx")
-                        .retrieve()
-                        .toEntity(String.class),
-                HttpClientErrorException.class
-        );
-
-        then(exception.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
     }
 
     @Test

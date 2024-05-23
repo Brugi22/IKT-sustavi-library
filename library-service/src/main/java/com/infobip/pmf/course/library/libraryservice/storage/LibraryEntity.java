@@ -60,14 +60,6 @@ public class LibraryEntity {
         return libraryEntity;
     }
 
-    public Library asLibrary() {
-        return new Library(id, groupId, artifactId, name, description, Optional.ofNullable(versions)
-                                                                                .orElse(Collections.emptyList())
-                                                                                .stream()
-                                                                                .map(VersionEntity::asVersion)
-                                                                                .toList());
-    }
-
     public Long getId() {
         return id;
     }
